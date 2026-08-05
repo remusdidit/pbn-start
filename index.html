@@ -316,6 +316,39 @@
   const statusTxt = document.getElementById("statusText");
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  const STATUS_URL = "https://pbnstatus26986.blob.core.windows.net/status/status.json";
+  let poweringUp = false, becameOnline = false;
+
+  function setDot(c){ dot.style.background = c; dot.style.boxShadow = "0 0 10px " + c; }
+
+  function showUp(){
+    becameOnline = true;
+    setDot("var(--green)");
+    statusTxt.textContent = "Online · load in now";
+    var i = bar.querySelector("i"); if (i){ i.style.animation = "none"; i.style.width = "100%"; }
+    barLabel.textContent = "Server's up — load in";
+  }
+
+  function applyStatus(d){
+    if (!d){ if (!poweringUp){ setDot("var(--rust)"); statusTxt.textContent = "Grid offline · Knox County"; } return; }
+    var fresh = (Date.now()/1000 - d.ts) <= 180;
+    var online = fresh && d.online, booting = fresh && d.up && !d.online;
+    if (poweringUp){
+      if (online && !becameOnline) showUp();
+      else if (booting && !becameOnline) statusTxt.textContent = "Booting · Knox County";
+      return;
+    }
+    if (online){ setDot("var(--green)"); statusTxt.textContent = "Online · " + d.players + (d.players==1?" survivor":" survivors"); }
+    else if (booting){ setDot("var(--amber)"); statusTxt.textContent = "Booting · Knox County"; }
+    else { setDot("var(--rust)"); statusTxt.textContent = "Grid offline · asleep"; }
+  }
+
+  function poll(){
+    fetch(STATUS_URL + "?t=" + Date.now(), { cache:"no-store" })
+      .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+      .then(applyStatus).catch(function(){ applyStatus(null); });
+  }
+
   const bootLines = [
     "signal received",
     "spinning up the generator…",
@@ -355,26 +388,28 @@
 
     fire();
 
-    dot.style.background = "var(--amber)";
-    dot.style.boxShadow = "0 0 10px var(--amber)";
+    poweringUp = true;
+    setDot("var(--amber)");
     statusTxt.textContent = "Powering up · Knox County";
 
     readout.classList.add("show");
-    if (!reduce) bar.classList.add("run");
-    else { bar.classList.add("run"); }
+    bar.classList.add("run");
 
     typeLog(bootLines, function () {
-      statusTxt.textContent = "Signal sent · give it ~5 min";
+      if (!becameOnline) statusTxt.textContent = "Signal sent · watching for power";
     });
 
-    // After the estimated boot window, nudge them to connect.
+    // Poll faster while waiting for it to come online.
+    var fast = setInterval(function(){ if (becameOnline) clearInterval(fast); else poll(); }, 8000);
+
+    // Fallback if the heartbeat never reports online (e.g. status offline).
     setTimeout(function () {
-      dot.style.background = "var(--green)";
-      dot.style.boxShadow = "0 0 10px var(--green)";
-      statusTxt.textContent = "Should be up · load in now";
-      barLabel.textContent = "Boot window elapsed — try connecting";
-    }, reduce ? 4000 : 300000);
+      if (!becameOnline){ setDot("var(--green)"); statusTxt.textContent = "Should be up · try loading in"; barLabel.textContent = "Boot window elapsed — try connecting"; }
+    }, reduce ? 4000 : 360000);
   });
+
+  poll();
+  setInterval(poll, 20000);
 })();
 </script>
 </body>
