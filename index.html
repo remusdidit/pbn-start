@@ -224,7 +224,7 @@
     width: 0%;
     background: linear-gradient(90deg, var(--amber-dim), var(--amber));
   }
-  .bar.run > i { animation: fill 120s linear forwards; }
+  .bar.run > i { animation: fill 300s linear forwards; }
   @keyframes fill { to { width: 100%; } }
 
   .bar-label {
@@ -280,12 +280,12 @@
     <h1>The safehouse<br>is <span class="flick">dark</span>.</h1>
 
     <p class="lede">Nobody's home and the power's out. Hit the generator to bring
-      <b>PBN&nbsp;Xtreme</b> back online, wait a couple minutes for it to spin up,
+      <b>PBN&nbsp;Xtreme</b> back online, wait a few minutes for it to spin up,
       then load in.</p>
 
     <button class="btn" id="startBtn" type="button">
       Restore power
-      <span class="sub">starts the server · takes ~2 min to boot</span>
+      <span class="sub">starts the server · takes ~5 min to boot</span>
     </button>
 
     <section class="readout" id="readout" aria-live="polite">
@@ -364,7 +364,7 @@
     else { bar.classList.add("run"); }
 
     typeLog(bootLines, function () {
-      statusTxt.textContent = "Signal sent · give it ~2 min";
+      statusTxt.textContent = "Signal sent · give it ~5 min";
     });
 
     // After the estimated boot window, nudge them to connect.
@@ -373,7 +373,7 @@
       dot.style.boxShadow = "0 0 10px var(--green)";
       statusTxt.textContent = "Should be up · load in now";
       barLabel.textContent = "Boot window elapsed — try connecting";
-    }, reduce ? 4000 : 120000);
+    }, reduce ? 4000 : 300000);
   });
 })();
 </script>
